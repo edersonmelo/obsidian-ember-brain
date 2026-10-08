@@ -1,56 +1,70 @@
 # Ember Brain
 
-Plugin do Obsidian que abre o grafo do vault como um **show animado**, numa aba própria, ao lado do Graph view.
+Watch your vault come alive. Ember Brain opens your notes as an **animated graph** in its own tab, next to the core Graph view: your most active notes glow and pulse, light flows along your links, and the whole vault grows in the order you wrote it.
 
 ![Ember Brain](docs/screenshot.png)
 
-## O que mostra
+## Features
 
-- **Abertura:** as notas nascem na ordem em que foram criadas, com uma data correndo no canto.
-- **Em brasa:** notas quentes pulsam em amarelo, com ondas de sonar.
-- **Partículas:** luz corre pelas conexões em direção às notas mais quentes.
-- **Ritmo:** notas mornas "respiram" devagar; as frias cintilam fraco.
-- **Cores:** cada pasta tem a sua, num fundo de estrelas.
-- **Ao vivo:** atualiza quando você cria, edita, renomeia ou apaga notas.
+- **Intro.** Notes appear in creation order while a date ticks in the corner. Replay it anytime.
+- **Notes on fire.** Hot notes pulse in gold with sonar rings.
+- **Light along links.** Particles flow towards the hottest notes.
+- **Breathing graph.** Warm notes breathe slowly; cold ones twinkle faintly.
+- **Folder colors.** Each folder gets its own color over a starry sky. Colors are configurable.
+- **Live.** The graph updates as you create, edit, rename or delete notes.
+- **Click to open.** Click a note to open it in a new tab, or `Cmd/Ctrl`+click to open it to the side.
+- **Languages.** The interface is in English and Portuguese, following Obsidian's language.
 
-## Como abrir
+## How heat is decided
 
-- Ícone de **chama** na barra lateral, ou
-- paleta de comandos: **Abrir Ember Brain**.
+1. **A `heat` property.** If a note has `heat: hot`, `heat: warm` or `heat: cold` in its frontmatter, that value is used. You can set it by hand, or generate it from your note history with [obsidian-heatmap](https://github.com/edersonmelo/obsidian-heatmap).
+2. **Otherwise, the last edit.** Under a day is hot, under a week is warm, and anything older is cold.
 
-| Ação | Efeito |
+## Usage
+
+Click the **flame** icon in the ribbon, or run **Ember Brain: Open animated graph** from the command palette.
+
+| Action | Result |
 |---|---|
-| arrastar / rolar | mover / zoom (desliga a câmera automática) |
-| passar o mouse | nome, caminho, conexões e calor |
-| clicar | abre a nota numa aba nova (`Cmd/Ctrl` + clique: ao lado) |
-| `R` ou ícone ↺ | repete a abertura |
-| ícone ⤢ | tela cheia |
+| Drag / scroll | Pan / zoom (turns off the automatic camera) |
+| Hover a note | Name, path, number of links and heat |
+| Click a note | Open it in a new tab (`Cmd/Ctrl`+click: to the side) |
+| `R` or ↺ | Replay the intro |
+| ⤢ | Fullscreen |
 
-## De onde vem o calor
+## Settings
 
-1. **Propriedade `heat:`.** Se a nota tiver `heat: hot | warm | cold` no frontmatter, o plugin usa esse valor. O projeto [obsidian-heatmap](https://github.com/edersonmelo/obsidian-heatmap) grava essa propriedade conforme o histórico de atualizações de cada nota e das notas ligadas a ela. Ele também espelha o Notion no vault.
-2. **Sem a propriedade:** o calor vem da última modificação. Menos de 1 dia conta como em brasa, menos de 7 dias como aquecendo, e o resto como fria.
-
-## Configurações
-
-| Opção | O que faz |
+| Setting | Description |
 |---|---|
-| Pasta raiz | Só as notas desta pasta entram, e as cores são por subpasta dela. Vazio = vault inteiro. |
-| Cores por pasta | Uma por linha: `Pasta: #rrggbb`. As outras pastas recebem cores da paleta. |
-| Duração da abertura | Segundos para todas as notas nascerem. |
+| Root folder | Only notes in this folder are shown, colored by their subfolder. Leave empty for the whole vault. |
+| Folder colors | One per line, as `Folder: #rrggbb`. Folders without a color get one from the palette. |
+| Intro duration | Seconds for all notes to appear. |
 
-## Desenvolvimento
+## Installation
+
+- **From Community plugins:** search for **Ember Brain** once it is listed.
+- **Manually:** download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/edersonmelo/obsidian-ember-brain/releases/latest) into `<vault>/.obsidian/plugins/ember-brain/`. Then enable the plugin in *Settings → Community plugins*.
+
+## Privacy
+
+Ember Brain works entirely offline:
+- It makes no network requests.
+- It collects no data.
+- It never modifies your notes; it only reads links, frontmatter and file dates.
+
+## Development
 
 ```sh
 npm install
-npm run dev     # recompila a cada mudança
-npm run build   # checa tipos e gera main.js
+npm run dev    # rebuild on change
+npm run lint   # eslint with eslint-plugin-obsidianmd (the same rules as the plugin review)
+npm run build  # type-check and produce main.js
 ```
 
-Para testar, copie `main.js`, `manifest.json` e `styles.css` para `<vault>/.obsidian/plugins/ember-brain/` e ative em *Configurações → Plugins da comunidade*.
+To release, run `npm version patch` (or `minor`/`major`) and push the tag (`git push --follow-tags`). The GitHub Action builds the plugin and attaches `main.js`, `manifest.json` and `styles.css` to the release.
 
-O desenho é em canvas 2D, e a física do grafo usa [d3-force](https://github.com/d3/d3-force), embutido no `main.js`. O plugin não carrega nada da internet e não altera nenhuma nota.
+The graph is drawn on a 2D canvas. The physics uses [d3-force](https://github.com/d3/d3-force), bundled into `main.js`.
 
-## Licença
+## License
 
-MIT
+[MIT](LICENSE) © Ederson Melo

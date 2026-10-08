@@ -1,10 +1,11 @@
-import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf } from "obsidian";
+import { App, normalizePath, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { t } from "./i18n";
 import { EmberBrainView, VIEW_TYPE_EMBER } from "./view";
 
 export interface EmberBrainSettings {
-  /** Só esta pasta entra no grafo (vazio = vault inteiro). As cores são por subpasta dela. */
+  /** Only notes in this folder are shown (empty = whole vault). Colors are per subfolder of it. */
   rootFolder: string;
-  /** Uma por linha: "Pasta: #rrggbb". */
+  /** One per line: "Folder: #rrggbb". */
   groupColors: string;
   introSeconds: number;
 }
@@ -16,34 +17,53 @@ const DEFAULT_SETTINGS: EmberBrainSettings = {
 };
 
 export default class EmberBrainPlugin extends Plugin {
-  settings: EmberBrainSettings = DEFAULT_SETTINGS;
+  settings: EmberBrainSettings = { ...DEFAULT_SETTINGS };
 
   async onload() {
     await this.loadSettings();
     this.registerView(VIEW_TYPE_EMBER, leaf => new EmberBrainView(leaf, this));
-    this.addRibbonIcon("flame", "Abrir Ember Brain", () => this.openView());
-    this.addCommand({ id: "open", name: "Abrir Ember Brain", callback: () => this.openView() });
+    this.addRibbonIcon("flame", t().openView, () => void this.openView());
+    this.addCommand({ id: "open-view", name: t().openView, callback: () => void this.openView() });
     this.addSettingTab(new EmberBrainSettingTab(this.app, this));
   }
 
   async openView() {
-    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_EMBER)[0];
-    const leaf: WorkspaceLeaf = existing ?? this.app.workspace.getLeaf("tab");
-    if (!existing) await leaf.setViewState({ type: VIEW_TYPE_EMBER, active: true });
-    this.app.workspace.revealLeaf(leaf);
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(VIEW_TYPE_EMBER)[0];
+    if (!leaf) {
+      leaf = workspace.getLeaf("tab");
+      await leaf.setViewState({ type: VIEW_TYPE_EMBER, active: true });
+    }
+    await workspace.revealLeaf(leaf);
+  }
+
+  /** The root folder as a normalized vault path ("" = whole vault). */
+  rootFolder(): string {
+    const raw = this.settings.rootFolder.trim();
+    return raw ? normalizePath(raw).replace(/^\/+|\/+$/g, "") : "";
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const saved = (await this.loadData()) as Partial<EmberBrainSettings> | null;
+    this.settings = { ...DEFAULT_SETTINGS, ...saved };
   }
 
   async saveSettings() {
     await this.saveData(this.settings);
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_EMBER)) {
-      (leaf.view as EmberBrainView).refresh();
+      if (leaf.view instanceof EmberBrainView) leaf.view.refresh();
     }
   }
 }
+
+type SettingKey = keyof EmberBrainSettings;
+
+/** Minimal local typing of the declarative settings API (Obsidian 1.13+), so we keep building against older typings. */
+type SettingControlDef =
+  | { type: "folder"; key: SettingKey; placeholder?: string; includeRoot?: boolean }
+  | { type: "textarea"; key: SettingKey; placeholder?: string; rows?: number }
+  | { type: "slider"; key: SettingKey; min: number; max: number; step: number };
+interface SettingDef { name: string; desc?: string; control?: SettingControlDef }
 
 class EmberBrainSettingTab extends PluginSettingTab {
   plugin: EmberBrainPlugin;
@@ -53,34 +73,75 @@ class EmberBrainSettingTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
+  /** Obsidian 1.13+: declarative settings, which also show up in settings search. */
+  getSettingDefinitions(): SettingDef[] {
+    const s = t();
+    return [
+      { name: s.rootFolderName, desc: s.rootFolderDesc,
+        control: { type: "folder", key: "rootFolder", placeholder: s.rootFolderPlaceholder, includeRoot: true } },
+      { name: s.colorsName, desc: s.colorsDesc,
+        control: { type: "textarea", key: "groupColors", placeholder: s.colorsPlaceholder, rows: 6 } },
+      { name: s.introName, desc: s.introDesc,
+        control: { type: "slider", key: "introSeconds", min: 3, max: 40, step: 1 } },
+      { name: s.heatSourceName, desc: s.heatSourceDesc },
+    ];
+  }
+
+  getControlValue(key: string): unknown {
+    return this.plugin.settings[key as SettingKey];
+  }
+
+  async setControlValue(key: string, value: unknown) {
+    const settings = this.plugin.settings as unknown as Record<string, unknown>;
+    settings[key] = value;
+    await this.plugin.saveSettings();
+  }
+
+  /** Obsidian before 1.13: classic settings UI. */
   display() {
     const { containerEl } = this;
+    const s = t();
     containerEl.empty();
 
-    containerEl.createEl("p", {
-      text: "Notas com a propriedade heat: hot | warm | cold (ex.: geradas pelo obsidian-heatmap) usam esse calor. " +
-        "Sem ela, o calor vem da última modificação: menos de 1 dia = em brasa, menos de 7 dias = aquecendo.",
-    });
+    new Setting(containerEl)
+      .setName(s.rootFolderName)
+      .setDesc(s.rootFolderDesc)
+      .addText(text => text
+        .setPlaceholder(s.rootFolderPlaceholder)
+        .setValue(this.plugin.settings.rootFolder)
+        .onChange(async value => {
+          this.plugin.settings.rootFolder = value;
+          await this.plugin.saveSettings();
+        }));
 
     new Setting(containerEl)
-      .setName("Pasta raiz")
-      .setDesc("Só as notas desta pasta entram no grafo, e as cores são por subpasta dela. Vazio = vault inteiro.")
-      .addText(t => t.setPlaceholder("ex.: edersonmelo").setValue(this.plugin.settings.rootFolder)
-        .onChange(async v => { this.plugin.settings.rootFolder = v.trim(); await this.plugin.saveSettings(); }));
-
-    new Setting(containerEl)
-      .setName("Cores por pasta")
-      .setDesc("Uma por linha, no formato Pasta: #rrggbb. As pastas sem cor recebem cores da paleta.")
-      .addTextArea(t => {
-        t.setPlaceholder("Notion: #dfe6f5\n02 Projetos: #ff5c7a").setValue(this.plugin.settings.groupColors)
-          .onChange(async v => { this.plugin.settings.groupColors = v; await this.plugin.saveSettings(); });
-        t.inputEl.rows = 6;
+      .setName(s.colorsName)
+      .setDesc(s.colorsDesc)
+      .addTextArea(text => {
+        text
+          .setPlaceholder(s.colorsPlaceholder)
+          .setValue(this.plugin.settings.groupColors)
+          .onChange(async value => {
+            this.plugin.settings.groupColors = value;
+            await this.plugin.saveSettings();
+          });
+        text.inputEl.rows = 6;
       });
 
     new Setting(containerEl)
-      .setName("Duração da abertura (segundos)")
-      .setDesc("Tempo em que as notas vão nascendo na ordem de criação.")
-      .addSlider(s => s.setLimits(3, 40, 1).setValue(this.plugin.settings.introSeconds).setDynamicTooltip()
-        .onChange(async v => { this.plugin.settings.introSeconds = v; await this.plugin.saveSettings(); }));
+      .setName(s.introName)
+      .setDesc(s.introDesc)
+      .addSlider(slider => slider
+        .setLimits(3, 40, 1)
+        .setValue(this.plugin.settings.introSeconds)
+        .setDynamicTooltip()
+        .onChange(async value => {
+          this.plugin.settings.introSeconds = value;
+          await this.plugin.saveSettings();
+        }));
+
+    new Setting(containerEl)
+      .setName(s.heatSourceName)
+      .setDesc(s.heatSourceDesc);
   }
 }
