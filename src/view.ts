@@ -69,6 +69,7 @@ export class EmberBrainView extends ItemView {
   private drag: { x: number; y: number; tx: number; ty: number; moved: boolean } | null = null;
 
   private introOn = false;
+  private introPending = false; // a abertura só começa a contar no primeiro quadro desenhado
   private introStart = 0;
   private order: EmberNode[] = [];
   private raf = 0;
@@ -83,7 +84,27 @@ export class EmberBrainView extends ItemView {
   getDisplayText() { return "Ember Brain"; }
   getIcon() { return "flame"; }
 
+  /** Erros vão para <configDir>/plugins/ember-brain/debug.log (o console do Obsidian nem sempre está à mão). */
+  private diag(msg: string) {
+    const path = `${this.app.vault.configDir}/plugins/ember-brain/debug.log`;
+    const line = `${new Date().toISOString()} ${msg}\n`;
+    console.log("[Ember Brain] " + msg);
+    this.app.vault.adapter.append(path, line).catch(() => this.app.vault.adapter.write(path, line));
+  }
+
+  private frameError = false;
+
   async onOpen() {
+    try {
+      await this.openInner();
+    } catch (e) {
+      const err = e as Error;
+      this.diag("ERRO no onOpen: " + (err.stack || err.message));
+      this.contentEl.createDiv({ cls: "ember-hud ember-error", text: "Ember Brain falhou ao abrir: " + err.message });
+    }
+  }
+
+  private async openInner() {
     const root = this.contentEl;
     root.empty();
     root.addClass("ember-brain-view");
@@ -241,7 +262,7 @@ export class EmberBrainView extends ItemView {
   private startIntro() {
     this.order = [...this.nodes].sort((a, b) => a.born - b.born);
     this.nodes.forEach(n => (n.shownAt = Infinity));
-    this.introStart = performance.now();
+    this.introPending = true;
     this.introOn = true;
     this.autoCam = true;
     this.clock.style.opacity = "1";
@@ -250,6 +271,7 @@ export class EmberBrainView extends ItemView {
 
   private updateIntro(now: number) {
     if (!this.introOn) return;
+    if (this.introPending) { this.introStart = now; this.introPending = false; }
     const dur = Math.max(1, this.plugin.settings.introSeconds) * 1000;
     const t = Math.min(1, (now - this.introStart) / dur);
     const eased = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
@@ -389,6 +411,15 @@ export class EmberBrainView extends ItemView {
   private frame(now: number) {
     this.raf = requestAnimationFrame(t => this.frame(t));
     if (!this.W || !this.H || !this.contentEl.isShown()) return; // aba escondida: não desenha
+    try {
+      this.draw(now);
+    } catch (e) {
+      if (!this.frameError) this.diag("ERRO no desenho: " + ((e as Error).stack || e));
+      this.frameError = true;
+    }
+  }
+
+  private draw(now: number) {
 
     this.updateIntro(now);
     this.updateCam(now);

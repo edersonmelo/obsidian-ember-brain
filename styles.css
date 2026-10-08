@@ -33,3 +33,4 @@
   .ember-brain-view .ember-hint { display: none; }
   .ember-brain-view .ember-clock { font-size: 26px; left: 16px; bottom: 16px; }
 }
+.ember-brain-view .ember-error { top: 50%; left: 24px; right: 24px; color: #ff8a8a; font-size: 14px; pointer-events: auto; }
