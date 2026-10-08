@@ -1,0 +1,10 @@
+{
+  "id": "ember-brain",
+  "name": "Ember Brain",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "An animated, glowing view of your vault graph: active notes pulse, light flows along links and the vault grows in creation order.",
+  "author": "Ederson Melo",
+  "authorUrl": "https://github.com/edersonmelo",
+  "isDesktopOnly": false
+}

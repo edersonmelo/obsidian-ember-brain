@@ -1,0 +1,35 @@
+/* Ember Brain: o "show" usa sempre fundo escuro, independente do tema. */
+.ember-brain-view {
+  position: relative;
+  padding: 0 !important;
+  overflow: hidden;
+  background: #04060d;
+  color: #e8ecf6;
+  outline: none;
+}
+.ember-brain-view .ember-canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.ember-brain-view .ember-canvas:active { cursor: grabbing; }
+.ember-brain-view .ember-hud { position: absolute; pointer-events: none; }
+.ember-brain-view .ember-title { top: 20px; left: 24px; }
+.ember-brain-view .ember-title h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: .04em; color: #e8ecf6; }
+.ember-brain-view .ember-title h1 span { color: #ffd400; text-shadow: 0 0 18px rgba(255, 212, 0, .7); }
+.ember-brain-view .ember-title p { margin: 6px 0 0; color: #7d8aa8; font-size: 12px; }
+.ember-brain-view .ember-hint { top: 20px; right: 24px; color: #7d8aa8; font-size: 11px; text-align: right; }
+.ember-brain-view .ember-clock {
+  bottom: 24px; left: 24px; font: 600 38px/1 var(--font-monospace); color: rgba(232, 236, 246, .9);
+  letter-spacing: .06em; text-shadow: 0 0 24px rgba(120, 170, 255, .5); transition: opacity 1.2s;
+}
+.ember-brain-view .ember-legend { bottom: 24px; right: 24px; text-align: right; color: #7d8aa8; font-size: 11px; }
+.ember-brain-view .ember-legend div { margin-top: 4px; }
+.ember-brain-view .ember-legend i {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; vertical-align: middle;
+}
+.ember-brain-view .ember-tip {
+  padding: 8px 12px; border-radius: 8px; background: rgba(10, 14, 28, .9); border: 1px solid rgba(255, 255, 255, .08);
+  font-size: 13px; opacity: 0; transition: opacity .15s; max-width: 360px; z-index: 2;
+}
+.ember-brain-view .ember-tip small { display: block; color: #7d8aa8; }
+@media (max-width: 640px) {
+  .ember-brain-view .ember-hint { display: none; }
+  .ember-brain-view .ember-clock { font-size: 26px; left: 16px; bottom: 16px; }
+}

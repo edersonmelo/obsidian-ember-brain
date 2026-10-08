@@ -1,0 +1,22 @@
+{
+  "name": "obsidian-ember-brain",
+  "version": "0.1.0",
+  "description": "Ember Brain: an animated, glowing view of your vault graph where the most active notes pulse.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/d3-force": "3.0.10",
+    "@types/node": "22.15.3",
+    "esbuild": "0.25.5",
+    "obsidian": "1.8.7",
+    "tslib": "2.8.1",
+    "typescript": "5.8.3"
+  },
+  "dependencies": {
+    "d3-force": "3.0.0"
+  }
+}
