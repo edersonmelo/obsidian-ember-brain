@@ -82,7 +82,7 @@ npm run lint   # eslint with eslint-plugin-obsidianmd (the same rules as the plu
 npm run build  # type-check and produce main.js
 ```
 
-To release, run `npm version patch` (or `minor`/`major`) and push the tag (`git push --follow-tags`). The GitHub Action builds the plugin and attaches `main.js`, `manifest.json` and `styles.css` to the release.
+To release, run `npm version patch` (or `minor`/`major`), then push the commit and the tag: `git push origin main <version>`. The tag is lightweight and has no "v", as the plugin directory expects, so `git push --follow-tags` does not push it. The GitHub Action builds the plugin, attests `main.js` and `styles.css`, and publishes the release with `main.js`, `manifest.json` and `styles.css`.
 
 The graph is drawn on a 2D canvas. The physics uses [d3-force](https://github.com/d3/d3-force), bundled into `main.js`.
 
