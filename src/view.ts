@@ -165,8 +165,8 @@ export class EmberBrainView extends ItemView {
 
     this.nodes = files.map(f => {
       const rel = root ? f.path.slice(root.length + 1) : f.path;
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter as Record<string, unknown> | undefined;
-      const raw = fm?.["heat"];
+      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
+      const raw: unknown = fm?.["heat"];
       let heat: Heat;
       if (isHeat(raw)) heat = raw;
       else { // no heat property: use the last edit

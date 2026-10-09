@@ -51,6 +51,7 @@ Ember Brain works entirely offline:
 - It makes no network requests.
 - It collects no data.
 - It never modifies your notes; it only reads links, frontmatter and file dates.
+- To draw the graph, it lists the Markdown notes in your vault (or only those in the root folder, if you set one). The list stays in memory and never leaves your device.
 
 ## Development
 
