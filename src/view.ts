@@ -3,12 +3,11 @@ import {
   forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY,
   Simulation, SimulationNodeDatum,
 } from "d3-force";
+import type { Heat } from "./heat";
 import { t } from "./i18n";
 import type EmberBrainPlugin from "./main";
 
 export const VIEW_TYPE_EMBER = "ember-brain-view";
-
-type Heat = "hot" | "warm" | "cold";
 
 interface EmberNode extends SimulationNodeDatum {
   path: string;
@@ -37,10 +36,11 @@ interface Particle { link: EmberLink; t: number; v: number; color: string }
 const HOT = "#ffd400";
 const ROOT_COLOR = "#8fa3bf";
 const PALETTE = ["#4dd0e1", "#ff5c7a", "#69f0ae", "#b388ff", "#ff9e40", "#64b5f6", "#f06292", "#aed581", "#ffb74d"];
-const DAY = 86400000;
+const RANK: Record<Heat, number> = { hot: 2, warm: 1, cold: 0 };
 
-function isHeat(value: unknown): value is Heat {
-  return value === "hot" || value === "warm" || value === "cold";
+/** Which end of a link is hotter: heat first, then the score. */
+function hotter(a: EmberNode, b: EmberNode) {
+  return RANK[a.heat] !== RANK[b.heat] ? RANK[a.heat] > RANK[b.heat] : a.score >= b.score;
 }
 
 export class EmberBrainView extends ItemView {
@@ -158,21 +158,14 @@ export class EmberBrainView extends ItemView {
   private loadGraph() {
     const s = t();
     const root = this.plugin.rootFolder();
-    const files = this.app.vault.getMarkdownFiles().filter(f => !root || f.path.startsWith(root + "/"));
-    const now = Date.now();
+    const files = this.plugin.notes();
+    const heats = this.plugin.heatOf(files);
     const prev = this.byPath;
     this.byPath = new Map();
 
     this.nodes = files.map(f => {
       const rel = root ? f.path.slice(root.length + 1) : f.path;
-      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter;
-      const raw: unknown = fm?.["heat"];
-      let heat: Heat;
-      if (isHeat(raw)) heat = raw;
-      else { // no heat property: use the last edit
-        const age = now - f.stat.mtime;
-        heat = age < DAY ? "hot" : age < 7 * DAY ? "warm" : "cold";
-      }
+      const { heat, score } = heats.get(f.path) ?? { heat: "cold", score: 0 };
       const old = prev.get(f.path);
       const n: EmberNode = Object.assign(old ?? {
         x: (Math.random() - .5) * 40, y: (Math.random() - .5) * 40, shownAt: 0, phase: Math.random() * 6.28,
@@ -181,7 +174,7 @@ export class EmberBrainView extends ItemView {
         name: f.basename,
         group: rel.includes("/") ? rel.split("/")[0] : "",
         heat,
-        score: heat === "hot" ? 2 : heat === "warm" ? 1 : 0,
+        score,
         born: f.stat.ctime,
         deg: 0, r: 0, color: "",
         file: f,
@@ -202,7 +195,7 @@ export class EmberBrainView extends ItemView {
         const key = a.path < b.path ? a.path + "\0" + b.path : b.path + "\0" + a.path;
         if (seen.has(key)) continue;
         seen.add(key);
-        const to = a.score >= b.score ? a : b;
+        const to = hotter(a, b) ? a : b;
         this.links.push({ source: a, target: b, to, from: to === a ? b : a });
       }
     }

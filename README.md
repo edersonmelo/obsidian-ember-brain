@@ -17,8 +17,16 @@ Watch your vault come alive. Ember Brain opens your notes as an **animated graph
 
 ## How heat is decided
 
-1. **A `heat` property.** If a note has `heat: hot`, `heat: warm` or `heat: cold` in its frontmatter, that value is used. You can set it by hand, or generate it from your note history with [obsidian-heatmap](https://github.com/edersonmelo/obsidian-heatmap).
-2. **Otherwise, the last edit.** Under a day is hot, under a week is warm, and anything older is cold.
+Ember Brain keeps a history of your edits and scores each note by how often it was edited recently:
+
+- **Each editing session counts once.** Saves less than an hour apart are one update.
+- **Recent edits weigh more.** Each update counts `e^(-days/7)`, so its weight halves about every 5 days. Updates older than 60 days are dropped.
+- **Hubs warm up.** A note also gets a quarter of the score of every note linked to it, in either direction. A project page heats up when its notes are edited.
+- **Thresholds.** A score of 2 or more is hot, 0.5 or more is warm, and anything lower is cold.
+
+The history starts when you install the plugin: on the first run, each note counts its last edit as one update, and the graph gets more accurate over the following days. It is saved in the plugin's `data.json`, inside your vault.
+
+**A `heat` property wins.** If a note has `heat: hot`, `heat: warm` or `heat: cold` in its frontmatter, that value is used instead. You can set it by hand, or turn this off in the settings.
 
 ## Usage
 
@@ -39,6 +47,12 @@ Click the **flame** icon in the ribbon, or run **Ember Brain: Open animated grap
 | Root folder | Only notes in this folder are shown, colored by their subfolder. Leave empty for the whole vault. |
 | Folder colors | One per line, as `Folder: #rrggbb`. Folders without a color get one from the palette. |
 | Intro duration | Seconds for all notes to appear. |
+| Use the heat property | Notes with a `heat` property use it instead of the edit history. On by default. |
+| Write the heat property | Every hour, writes the heat from the edit history to each note's `heat` property, keeping the note's modification date. Use it to color the core Graph view (see below). Off by default. |
+
+### Coloring the core Graph view
+
+Turn on **Write the heat property**, then in *Graph view → Groups* add the searches `[heat:hot]`, `[heat:warm]` and `[heat:cold]` with the colors you like. The first matching group sets a note's color, so put `[heat:hot]` on top.
 
 ## Installation
 
@@ -50,7 +64,8 @@ Click the **flame** icon in the ribbon, or run **Ember Brain: Open animated grap
 Ember Brain works entirely offline:
 - It makes no network requests.
 - It collects no data.
-- It never modifies your notes; it only reads links, frontmatter and file dates.
+- It never modifies your notes, unless you turn on **Write the heat property**. Then it only adds or updates the `heat` line in each note's frontmatter. Otherwise it only reads links, frontmatter and file dates.
+- The edit history is a list of dates per note path, saved in the plugin's `data.json` inside your vault.
 - To draw the graph, it lists the Markdown notes in your vault (or only those in the root folder, if you set one). The list stays in memory and never leaves your device.
 
 ## Development
