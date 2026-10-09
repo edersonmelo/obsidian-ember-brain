@@ -11,6 +11,7 @@ Watch your vault come alive. Ember Brain opens your notes as an **animated graph
 - **Light along links.** Particles flow towards the hottest notes.
 - **Breathing graph.** Warm notes breathe slowly; cold ones twinkle faintly.
 - **Folder colors.** Each folder gets its own color over a starry sky. Colors are configurable.
+- **Heat from your edits.** Notes that you edit often, and the notes linked to them, get hotter. Optionally, the heat is written to each note's `heat` property, so the core Graph view can use it too.
 - **Live.** The graph updates as you create, edit, rename or delete notes.
 - **Click to open.** Click a note to open it in a new tab, or `Cmd/Ctrl`+click to open it to the side.
 - **Languages.** The interface is in English and Portuguese, following Obsidian's language.
@@ -56,8 +57,12 @@ Turn on **Write the heat property**, then in *Graph view → Groups* add the sea
 
 ## Installation
 
-- **From Community plugins:** search for **Ember Brain** once it is listed.
+- **From Community plugins:** in *Settings → Community plugins → Browse*, search for **Ember Brain**, or open its [page in the plugin directory](https://community.obsidian.md/plugins/ember-brain).
 - **Manually:** download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/edersonmelo/obsidian-ember-brain/releases/latest) into `<vault>/.obsidian/plugins/ember-brain/`. Then enable the plugin in *Settings → Community plugins*.
+
+## Companion script: Notion in your graph
+
+[obsidian-heatmap](https://github.com/edersonmelo/obsidian-heatmap) is a Python script, outside Obsidian, that came before this plugin. Its main use now is mirroring the structure of your Notion workspace into the vault as light notes, so Notion pages show up in the graph and heat up when edited in Notion. It also computes heat and can write the `heat` property. If you use both, only one of them should write it: see that project's README.
 
 ## Privacy
 
