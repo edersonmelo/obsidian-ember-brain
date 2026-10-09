@@ -1,6 +1,6 @@
 {
   "name": "obsidian-ember-brain",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Watch your vault come alive: an animated graph where your most active notes glow and pulse.",
   "main": "main.js",
   "scripts": {
